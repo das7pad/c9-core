@@ -10,7 +10,6 @@ FALLBACKENV="$HOME/.c9/$PYTHON"
 
 if [[ -d $SHAREDENV ]]; then
     ENV=$SHAREDENV
-    source $ENV/bin/activate
     PYTHON="$ENV/bin/$PYTHON"
 else
     ENV=$FALLBACKENV
@@ -26,14 +25,12 @@ else
         fi
     fi
 
-    source $ENV/bin/activate
-
-    if ! python -c 'import jedi' &>/dev/null; then
+    PYTHON="$ENV/bin/$PYTHON"
+    if ! $PYTHON -c 'import jedi' &>/dev/null; then
+        PIP="$ENV/bin/pip"
         echo "Installing python support dependencies" >&2
-        pip install --upgrade jedi pylint pylint-flask pylint-django >&2
+        $PIP install --upgrade jedi pylint pylint-flask pylint-django >&2
     fi
-
-    PYTHON=$ENV/bin/$PYTHON
 fi
 
 COMMAND=${COMMAND/\$PYTHON/$PYTHON}
