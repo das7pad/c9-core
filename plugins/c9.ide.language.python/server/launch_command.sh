@@ -12,14 +12,18 @@ if [[ -d $SHAREDENV ]]; then
     ENV=$SHAREDENV
     source $ENV/bin/activate
     PYTHON="$ENV/bin/$PYTHON"
-elif which virtualenv &>/dev/null; then
+else
     ENV=$FALLBACKENV
+
     if ! [[ -d $ENV ]]; then
-        VERSION=
         if [ "$PYTHON" = "python3" ]; then
-            VERSION=--python=python3
+            python3 -m venv $ENV
+        else
+            if ! which virtualenv &>/dev/null; then
+                pip install -U virtualenv
+            fi
+            virtualenv --python=python2 $ENV
         fi
-        virtualenv $VERSION $ENV
     fi
 
     source $ENV/bin/activate
@@ -30,10 +34,6 @@ elif which virtualenv &>/dev/null; then
     fi
 
     PYTHON=$ENV/bin/$PYTHON
-else
-    echo "Python support fatal error: virtualenv not installed" >&2
-    echo "try 'pip install virtualenv' or 'sudo pip install virtualenv'" >&2
-    exit 1
 fi
 
 COMMAND=${COMMAND/\$PYTHON/$PYTHON}
