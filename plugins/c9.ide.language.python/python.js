@@ -23,10 +23,10 @@ define(function(require, exports, module) {
             .replace(/ {4}/g, " ").replace(/'/g, "'\\''");
         var launchCommand = require("text!./server/launch_command.sh")
             .replace(/ {2,}/g, " ");
-        
+
         plugin.on("load", function() {
             jsonalyzer.registerWorkerHandler("plugins/c9.ide.language.python/worker/python_jsonalyzer");
-            
+
             prefs.add({
                 "Project": {
                     "Python Support": {
@@ -71,26 +71,26 @@ define(function(require, exports, module) {
                     }
                 }
             }, plugin);
-            
+
             settings.on("read", function(e) {
                 settings.setDefaults("project/python", [
                     ["version", "python2"],
                     ["completion", true],
-                    ["path", options.pythonPath || "/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python3.4/dist-packages"]
+                    ["path", options.pythonPath || "/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python3.4/dist-packages:/usr/local/lib/python3.5/dist-packages:/usr/local/lib/python3.6/dist-packages"]
                 ]);
             }, plugin);
-            
+
             language.registerLanguageHandler("plugins/c9.ide.language.python/worker/python_linter", function(err, handler) {
                 if (err) return console.error(err);
                 setupHandler(handler);
             });
-            
+
             language.registerLanguageHandler("plugins/c9.ide.language.python/worker/python_completer", function(err, handler) {
                 if (err) return console.error(err);
                 setupHandler(handler);
             });
         });
-            
+
         function setupHandler(handler) {
             handler.emit("set_python_scripts", {
                 jediServer: jediServer,
@@ -100,7 +100,7 @@ define(function(require, exports, module) {
             settings.on("project/python", sendSettings.bind(null, handler), plugin);
             sendSettings(handler);
         }
-        
+
         function sendSettings(handler) {
             handler.emit("set_python_config", {
                 pythonVersion: settings.get("project/python/@version"),
@@ -109,13 +109,13 @@ define(function(require, exports, module) {
                 completion: settings.get("project/python/@completion"),
             });
         }
-        
+
         plugin.on("unload", function() {
             jsonalyzer.unregisterWorkerHandler("plugins/c9.ide.language.python/worker/python_jsonalyzer");
             language.unregisterLanguageHandler("plugins/c9.ide.language.python/worker/python_completer");
             language.unregisterLanguageHandler("plugins/c9.ide.language.python/worker/python_linter");
         });
-        
+
         /** @ignore */
         register(null, {
             "language.python": plugin
