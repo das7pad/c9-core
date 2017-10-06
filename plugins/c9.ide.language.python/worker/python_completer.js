@@ -12,7 +12,7 @@ var workerUtil = require("plugins/c9.ide.language/worker_util");
 var KEYWORD_REGEX = new RegExp(
     "^(and|as|assert|break|class|continue|def|del|elif|else|except|exec|"
     + "finally|for|from|global|if|import|in|is|lambda|not|or|pass|print|"
-    + "raise|return|try|while|with|yield)$"
+    + "raise|return|try|while|with|yield|async|await)$"
 );
 var DAEMON_PORT = 10880;
 var ERROR_PORT_IN_USE = 98;
@@ -54,7 +54,7 @@ handler.getIdentifierRegex = function() {
 };
 
 handler.getCompletionRegex = function() {
-    return (/(\.|\b(import|from|if|while|from|raise|return) |% )$/); 
+    return (/(\.|\b(import|from|if|while|from|raise|return|await) |% )$/);
 };
 
 handler.getCacheCompletionRegex = function() {
@@ -73,10 +73,10 @@ handler.onDocumentOpen = function(path, doc, oldPath, callback) {
  */
 handler.complete = function(doc, fullAst, pos, options, callback) {
     if (!enabled) return callback();
-    
+
     callDaemon("completions", handler.path, doc, pos, options, function(err, results, meta) {
         if (err) return callback(err);
-        
+
         results && results.forEach(function beautifyCompletion(r) {
             r.isContextual = true;
             r.guessTooltip = true;
@@ -103,7 +103,7 @@ handler.complete = function(doc, fullAst, pos, options, callback) {
  */
 handler.jumpToDefinition = function(doc, fullAst, pos, options, callback) {
     if (!enabled) return callback();
-    
+
     callDaemon("goto_definitions", handler.path, doc, pos, options, callback);
 };
 
@@ -144,7 +144,7 @@ handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
 function callDaemon(command, path, doc, pos, options, callback) {
     ensureDaemon(function(err, dontRetry) {
         if (err) return callback(err);
-        
+
         var start = Date.now();
         workerUtil.execAnalysis(
             "curl",
@@ -166,10 +166,10 @@ function callDaemon(command, path, doc, pos, options, callback) {
                         return callDaemon(command, path, doc, pos, options, callback);
                     return callback(new Error("jedi_server failed or not responding"));
                 }
-                
+
                 if (typeof stdout !== "object")
                     return callback(new Error("Couldn't parse python-jedi output: " + stdout));
-                
+
                 console.log("[python_completer] " + command + " in " + (Date.now() - start)
                     + "ms (jedi: " + meta.serverTime + "ms): "
                     + doc.getLine(pos.row).substr(0, pos.column));
@@ -194,7 +194,7 @@ function ensureDaemon(callback) {
             this.killed = true;
         }
     };
-    
+
     workerUtil.spawn(
         "bash",
         {
@@ -212,13 +212,13 @@ function ensureDaemon(callback) {
             }
             daemon = child;
             daemon.err = null;
-            
+
             if (daemon.killed)
                 daemon.kill();
-            
+
             // We (re)start the daemon after 30 minutes to conserve memory
             var killTimer = setTimeout(daemon.kill.bind(daemon), 30 * 60 * 1000);
-            
+
             child.stderr.on("data", function(data) {
                 output += data;
                 if (/Daemon listening/.test(data))
@@ -234,7 +234,7 @@ function ensureDaemon(callback) {
             });
         }
     );
-    
+
     function done(err, dontRetry) {
         if (err && /No module named jedi/.test(err.message) && !showedJediError) {
             workerUtil.showError("Jedi not found. Please run 'pip install jedi' or 'sudo pip install jedi' to enable Python code completion.");
