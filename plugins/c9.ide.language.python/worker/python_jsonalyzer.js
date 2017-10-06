@@ -15,6 +15,9 @@ var TAGS = [
     { regex: /(?:^|\n)\s*def\s+(?!_)([^ \(:]+)/g, kind: "method2", indent: 1 },
     { regex: /(?:^|\n)\s*def\s+(?!__[^ \(:]+__)(_[^ \(]*)/g, kind: "method2", indent: 1 },
     { regex: /(?:^|\n)\s*def\s+(__[^ \(:]+__)/g, kind: "property2", indent: 1 },
+    { regex: /(?:^|\n)\s*async def\s+(?!_)([^ \(:]+)/g, kind: "method2", indent: 1 },
+    { regex: /(?:^|\n)\s*async def\s+(?!__[^ \(:]+__)(_[^ \(]*)/g, kind: "method2", indent: 1 },
+    { regex: /(?:^|\n)\s*async def\s+(__[^ \(:]+__)/g, kind: "property2", indent: 1 },
     {
         regex: new RegExp(
             "(?:^|\\n)\\s*import\\s+([^ \\(]+)"
@@ -34,10 +37,10 @@ handler.extensions = ["py"];
 handler.analyzeCurrent = function(path, doc, ast, options, callback) {
     if (doc === "")
         return callback(null, {});
-        
+
     if (doc.length > jsonalyzer.getMaxFileSizeSupported())
         return callback(null, {});
-    
+
     var results = {};
     TAGS.forEach(function(tag) {
         if (tag.kind === "import")
