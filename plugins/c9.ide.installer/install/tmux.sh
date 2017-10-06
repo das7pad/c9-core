@@ -27,7 +27,7 @@ compile_tmux(){
   echo "Configuring Libevent"
   ./configure --prefix="$C9_DIR/local"
   echo "Compiling Libevent"
-  make
+  make -j4
   echo "Installing libevent"
   make install
  
@@ -39,33 +39,33 @@ compile_tmux(){
   echo "Configuring Ncurses"
   CPPFLAGS=-P ./configure --prefix="$C9_DIR/local" --without-tests --without-cxx
   echo "Compiling Ncurses"
-  make
+  make -j4
   echo "Installing Ncurses"
   make install
  
   cd "$C9_DIR"
   echo "Compiling tmux..."
-  tar xzf tmux-1.9.tar.gz
-  rm tmux-1.9.tar.gz
-  cd tmux-1.9
+  tar xzf tmux-2.6.tar.gz
+  rm tmux-2.6.tar.gz
+  cd tmux-2.6
   echo "Configuring Tmux"
   ./configure CFLAGS="-I$C9_DIR/local/include -I$C9_DIR/local/include/ncurses" CPPFLAGS="-I$C9_DIR/local/include -I$C9_DIR/local/include/ncurses" LDFLAGS="-static-libgcc -L$C9_DIR/local/lib" LIBEVENT_CFLAGS="-I$C9_DIR/local/include" LIBEVENT_LIBS="-static -L$C9_DIR/local/lib -levent" LIBS="-L$C9_DIR/local/lib/ncurses -lncurses" --prefix="$C9_DIR/local"
   echo "Compiling Tmux"
-  make
+  make -j4
   echo "Installing Tmux"
   make install
 }
 
 tmux_download(){
   echo "Downloading tmux source code"
-  echo "N.B: This will take a while. To speed this up install tmux 1.9 manually on your machine and restart this process."
+  echo "N.B: This will take a while. To speed this up install tmux 2.6 manually on your machine and restart this process."
   
   echo "Downloading Libevent..."
   $DOWNLOAD https://raw.githubusercontent.com/c9/install/master/packages/tmux/libevent-2.0.21-stable.tar.gz
   echo "Downloading Ncurses..."
   $DOWNLOAD https://raw.githubusercontent.com/c9/install/master/packages/tmux/ncurses-5.9.tar.gz
   echo "Downloading Tmux..."
-  $DOWNLOAD https://raw.githubusercontent.com/c9/install/master/packages/tmux/tmux-1.9.tar.gz
+  $DOWNLOAD https://github.com/tmux/tmux/releases/download/2.6/tmux-2.6.tar.gz
 }
 
 check_tmux_version(){
@@ -77,7 +77,7 @@ check_tmux_version(){
     return 1
   fi
 
-  if [ "$(node -e "console.log(1.7<=$tmux_version)")" == "true"  ]; then
+  if [ "$(node -e "console.log(2.6<=$tmux_version)")" == "true"  ]; then
     return 0
   else
     return 1
@@ -89,7 +89,7 @@ mkdir -p "$C9_DIR/bin"
 if check_tmux_version $C9_DIR/bin/tmux; then
   echo 'Existing tmux version is up-to-date'
 
-# If we can support tmux 1.9 or detect upgrades, the following would work:
+# If we can support tmux 2.6 or detect upgrades, the following would work:
 elif has "tmux" && check_tmux_version `which tmux`; then
   echo 'A good version of tmux was found, creating a symlink'
   ln -sf $(which tmux) "$C9_DIR"/bin/tmux

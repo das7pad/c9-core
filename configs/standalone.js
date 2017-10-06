@@ -91,7 +91,7 @@ module.exports = function(config, optimist) {
         config.startBridge = startBridge;
     
     if (testing && argv.k)
-        require("child_process").exec("tmux -L cloud91.9 kill-server", function() {});
+        require("child_process").exec("tmux -L cloud9_2.6 kill-server", function() {});
 
     var isLocalhost = host == "localhost" || host == "127.0.0.1";
     if (!/:/.test(argv.auth) && !isLocalhost) {
