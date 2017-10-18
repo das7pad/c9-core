@@ -56,6 +56,8 @@ def to_json(mode, nodoc):
                 params = ", ".join([p for p in paramList if p != None and p != "self"])
             except:
                 params = ""
+        else:
+            params = ""
         return remove_nulls({
             "name": c.name + ("(" + params + ")" if c.type == "function" else ""),
             "replaceText": c.name + "(^^)" if c.type == "function" else None,
