@@ -246,7 +246,7 @@ define(function(require, exports, module) {
             ["wrapToView", true, BOOL, "wrapmodeViewport"],
             
             // Ace
-            ["fontSize", "12", NUMBER, "fontsize"],
+            ["fontSize", 12, NUMBER, "fontsize"],
             ["fontFamily", font, STRING, "fontfamily"],
             ["antialiasedfonts", false, BOOL],
             ["overwrite", false, BOOL, "overwrite"],
@@ -257,17 +257,17 @@ define(function(require, exports, module) {
             ["showInvisibles", false, BOOL, "showinvisibles"],
             ["showPrintMargin", true, BOOL, "showprintmargin"],
             ["displayIndentGuides", true, BOOL, "showindentguides"],
-            ["printMarginColumn", "80", NUMBER, "printmargincolumn"],
+            ["printMarginColumn", 80, NUMBER, "printmargincolumn"],
             ["behavioursEnabled", true, BOOL, "behaviors"],
             ["wrapBehavioursEnabled", false, BOOL, "wrapbehaviors"],
-            ["scrollSpeed", "2", NUMBER, "scrollspeed"],
+            ["scrollSpeed", 2, NUMBER, "scrollspeed"],
             ["showGutter", true, BOOL, "gutter"],
             ["showLineNumbers", true, STRING],
             ["showFoldWidgets", true, BOOL, "folding"],
             ["fadeFoldWidgets", true, BOOL, "fadefoldwidgets"],
             ["highlightSelectedWord", true, BOOL, "highlightselectedword"],
             ["animatedScroll", true, BOOL, "animatedscroll"],
-            ["scrollPastEnd", "0.5", NUMBER],
+            ["scrollPastEnd", 0.5, NUMBER],
             ["mergeUndoDeltas", "off", STRING],
             ["theme", defaultThemes[skin], STRING, "theme"]
         ];
@@ -547,6 +547,10 @@ define(function(require, exports, module) {
             
             layout.on("themeChange", function(e) {
                 setFontSmoothing();
+                // reset this, since main theme can override ace theme colors
+                themeLoaded = {};
+                lastTheme = null;
+                setTheme(settings.get("user/ace/@theme"));
                 
                 if (e.type !== "ace" 
                   && settings.get("user/ace/@theme") != defaultThemes[e.oldTheme])
@@ -1823,7 +1827,7 @@ define(function(require, exports, module) {
                 container.style.position = "absolute";
                 container.style.left = "0px";
                 container.style.right = "0px";
-                container.style.top = ui.getStyle(e.htmlNode, "paddingTop");
+                container.style.top = "7px";
                 container.style.bottom = "0px";
         
                 // Create Ace editor instance
