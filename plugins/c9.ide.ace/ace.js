@@ -1,9 +1,10 @@
+/*global apf*/
 define(function(require, exports, module) {
     "use strict";
     main.consumes = [
         "Editor", "editors", "commands", "menus", "Menu", "MenuItem", "Divider",
         "settings", "c9", "preferences", "ui", "tabManager", "layout", "util",
-        "threewaymerge", "error_handler"
+        "threewaymerge", "error_handler", "apf"
     ];
     main.provides = ["ace"];
     return main;
@@ -15,6 +16,7 @@ define(function(require, exports, module) {
         var menus = imports.menus;
         var settings = imports.settings;
         var layout = imports.layout;
+        var apf = imports.apf;
         var c9 = imports.c9;
         var ui = imports.ui;
         var util = imports.util;
@@ -95,7 +97,7 @@ define(function(require, exports, module) {
         var themeCounter = 100;
         var lastTheme, grpSyntax, grpThemes;
         
-        var theme;
+        var currentTheme;
         var skin = settings.get("user/general/@skin");
         var defaultThemes = {
             "light": "ace/theme/cloud9_day",
@@ -117,7 +119,7 @@ define(function(require, exports, module) {
         } else {
             require([defaultThemes[skin]], function() {}); // Preload Themes
         }
-        handle.__defineGetter__("theme", function() { return theme; });
+        handle.__defineGetter__("theme", function() { return currentTheme; });
         
         function addCorner(ace) {
             if (isMinimal)
@@ -144,7 +146,7 @@ define(function(require, exports, module) {
         
         function setTheme(path, isPreview, fromServer, $err) {
             // Get Theme or wait for theme to load
-            theme = fromServer;
+            var theme = fromServer;
             if (/custom_themes/.test(path)) {
                 theme = themes[path];
                 if (!theme) return;
@@ -157,6 +159,7 @@ define(function(require, exports, module) {
             }
             
             if (!isPreview) {
+                currentTheme = theme;
                 if (settings.get("user/ace/@theme") != path) {
                     settings.set("user/ace/@theme", path);
                     
@@ -233,49 +236,49 @@ define(function(require, exports, module) {
         var STRING = "get";
         var NUMBER = "getNumber";
         
-        // Name, Default Value, Type, Old Name, Store in Project Settings
         var font = "Monaco, Menlo, Ubuntu Mono, Consolas, source-code-pro, monospace";
+        // Name, Default Value, Type
         var aceSettings = [
             // detected from document value
-            ["newLineMode", "unix", STRING, "newlinemode", 1],
+            ["newLineMode", "unix", STRING],
             // Per document
-            ["tabSize", 4, NUMBER, "tabsize", 1],
-            ["useSoftTabs", true, BOOL, "softtabs", 1],
-            ["guessTabSize", true, BOOL, "guesstabsize", 1],
-            ["useWrapMode", false, BOOL, "wrapmode"],
-            ["wrapToView", true, BOOL, "wrapmodeViewport"],
+            ["tabSize", 4, NUMBER],
+            ["useSoftTabs", true, BOOL],
+            ["guessTabSize", true, BOOL],
+            ["useWrapMode", false, BOOL],
+            ["wrapToView", true, BOOL],
             
             // Ace
-            ["fontSize", 12, NUMBER, "fontsize"],
-            ["fontFamily", font, STRING, "fontfamily"],
+            ["fontSize", 12, NUMBER],
+            ["fontFamily", font, STRING],
             ["antialiasedfonts", false, BOOL],
-            ["overwrite", false, BOOL, "overwrite"],
-            ["selectionStyle", "line", STRING, "selectstyle"],
-            ["cursorStyle", "ace", STRING, "cursorstyle"],
-            ["highlightActiveLine", true, BOOL, "activeline"],
-            ["highlightGutterLine", true, BOOL, "gutterline"],
-            ["showInvisibles", false, BOOL, "showinvisibles"],
-            ["showPrintMargin", true, BOOL, "showprintmargin"],
-            ["displayIndentGuides", true, BOOL, "showindentguides"],
-            ["printMarginColumn", 80, NUMBER, "printmargincolumn"],
-            ["behavioursEnabled", true, BOOL, "behaviors"],
-            ["wrapBehavioursEnabled", false, BOOL, "wrapbehaviors"],
-            ["scrollSpeed", 2, NUMBER, "scrollspeed"],
-            ["showGutter", true, BOOL, "gutter"],
+            ["overwrite", false, BOOL],
+            ["selectionStyle", "line", STRING],
+            ["cursorStyle", "ace", STRING],
+            ["highlightActiveLine", true, BOOL],
+            ["highlightGutterLine", true, BOOL],
+            ["showInvisibles", false, BOOL],
+            ["showPrintMargin", true, BOOL],
+            ["displayIndentGuides", true, BOOL],
+            ["printMarginColumn", 80, NUMBER],
+            ["behavioursEnabled", true, BOOL],
+            ["wrapBehavioursEnabled", false, BOOL],
+            ["scrollSpeed", 2, NUMBER],
+            ["showGutter", true, BOOL],
             ["showLineNumbers", true, STRING],
-            ["showFoldWidgets", true, BOOL, "folding"],
-            ["fadeFoldWidgets", true, BOOL, "fadefoldwidgets"],
-            ["highlightSelectedWord", true, BOOL, "highlightselectedword"],
-            ["animatedScroll", true, BOOL, "animatedscroll"],
+            ["showFoldWidgets", true, BOOL],
+            ["fadeFoldWidgets", true, BOOL],
+            ["highlightSelectedWord", true, BOOL],
+            ["animatedScroll", true, BOOL],
             ["scrollPastEnd", 0.5, NUMBER],
             ["mergeUndoDeltas", "off", STRING],
-            ["theme", defaultThemes[skin], STRING, "theme"]
+            ["theme", defaultThemes[skin], STRING]
         ];
         var docSettings = aceSettings.slice(1, 6);
-        var editorSettings = aceSettings.slice(6);
         var projectSettings = aceSettings.slice(0, 4);
         var userSettings = aceSettings.slice(4);
         var docLut = {}; docSettings.forEach(function(x) { docLut[x[0]] = x; });
+        var lastSettings = {};
         
         /***** Undo Manager *****/
         
@@ -482,21 +485,11 @@ define(function(require, exports, module) {
             setCommands();
             
             // Settings
-            var lastSettings = {};
             function updateSettings(e, list, prefix) {
                 var options = {};
                 (list || aceSettings).forEach(function(setting) {
                     options[setting[0]] 
                         = settings[setting[2]](prefix + "/ace/@" + setting[0]);
-                });
-                
-                // When loading from settings only set editor settings
-                docSettings.forEach(function(setting) {
-                    var val = options[setting[0]];
-                    if (val !== undefined) {
-                        setting[1] = val;
-                        delete options[setting[0]];
-                    }
                 });
                 
                 handleEmit("settingsUpdate", {
@@ -509,10 +502,10 @@ define(function(require, exports, module) {
                 util.extend(lastSettings, options);
             }
             
+            settings.setDefaults("user/ace", userSettings);
+            settings.setDefaults("project/ace", projectSettings);
+            
             settings.on("read", function(e) {
-                settings.setDefaults("user/ace", userSettings);
-                settings.setDefaults("project/ace", projectSettings);
-                
                 // TODO remove when there is a better way of loading custom themes
                 var customTheme = settings.get("user/ace/@customTheme");
                 if (customTheme)
@@ -551,13 +544,23 @@ define(function(require, exports, module) {
                 themeLoaded = {};
                 lastTheme = null;
                 setTheme(settings.get("user/ace/@theme"));
-                
-                if (e.type !== "ace" 
-                  && settings.get("user/ace/@theme") != defaultThemes[e.oldTheme])
-                    return false;
+            });
+            
+            layout.on("validateThemeChange", function(e) {
+                if (e.type !== "ace") {
+                    var themeName = settings.get("user/ace/@theme");
+                    if (themeName == defaultThemes[e.oldTheme])
+                        return;
+                    var style = currentTheme && (currentTheme.isDark ? "dark" : "light");
+                    if (e.theme.indexOf(style) == -1)
+                        return false;
+                }
             });
             
             layout.on("themeDefaults", function(e) {
+                var style = currentTheme && (currentTheme.isDark ? "dark" : "light");
+                if (e.force == false && e.theme.indexOf(style) != -1)
+                    return;
                 if (e.type != "ace")
                     handle.setTheme(defaultThemes[e.theme]);
             }, handle);
@@ -1900,7 +1903,7 @@ define(function(require, exports, module) {
                 
                 handle.on("themeChange", function(e) {
                     ace.setTheme(e.path);
-                    changeTheme();
+                    changeTheme(e);
                     
                     emit("themeChange", e);
                 }, plugin);
@@ -2119,11 +2122,11 @@ define(function(require, exports, module) {
                 ace.renderer.animateScrolling(initialScroll);
             }
             
-            function changeTheme() {
+            function changeTheme(e) {
                 if (immutableSkin || !currentSession) 
                     return;
                 
-                var theme = handle.theme;
+                var theme = e && e.theme || handle.theme;
                 if (handle.theme && currentSession.cssClass != theme.cssClass) {
                     var tab = currentDocument.tab;
                     var html = plugin.aml.$int;
@@ -2500,7 +2503,7 @@ define(function(require, exports, module) {
                 if (!e.state || !e.state.options)
                     docSettings.forEach(function(setting) {
                         var name = setting[0];
-                        setOption(name, setting[1], c9Session);
+                        setOption(name, lastSettings[name], c9Session);
                     });
                 
                 if (e.state && e.state.customSyntax)
