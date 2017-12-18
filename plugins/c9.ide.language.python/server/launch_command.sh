@@ -31,7 +31,7 @@ else
         echo "Installing python support dependencies" >&2
         $PIP install --upgrade \
             jedi \
-            pylint \
+            'pylint>=1.7,<1.8' \
             pylint-flask \
             pylint-django \
             >&2
