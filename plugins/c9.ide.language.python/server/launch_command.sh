@@ -29,7 +29,12 @@ else
     if ! $PYTHON -c 'import jedi' &>/dev/null; then
         PIP="$ENV/bin/pip"
         echo "Installing python support dependencies" >&2
-        $PIP install --upgrade jedi pylint pylint-flask pylint-django >&2
+        $PIP install --upgrade \
+            jedi \
+            pylint \
+            pylint-flask \
+            pylint-django \
+            >&2
     fi
 fi
 
