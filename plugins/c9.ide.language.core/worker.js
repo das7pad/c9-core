@@ -10,8 +10,7 @@
  * themselves with the worker.
  */
 define(function(require, exports, module) {
-
-require("ace/lib/es5-shim");
+// TODO fix build script to check for deps in ace/worker/worker.js    
 require("ace/lib/es6-shim");
 
 var oop = require("ace/lib/oop");
