@@ -28,7 +28,6 @@ var PYLINT_DEFAULTS = [
 var PYLINT_CONFIG = [
     "-r", "n", 
     "--msg-template={line}:{column}:\\ [{msg_id}]\\ {msg}",
-    "--load-plugins", "pylint_flask,pylint_django",
 ];
 
 handler.handlesLanguage = function(language) {
