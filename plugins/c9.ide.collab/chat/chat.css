@@ -29,6 +29,7 @@
     font-size: @collab-chat-font-size;
     padding: 0 0 0 0;
     background: @collab-chat-background;
+    flex: 1;
 }
 .chatText p {
     padding: @collab-chat-item-padding;
@@ -95,7 +96,7 @@
 }
 .chatContainer .searchbox .sbtb_middle .input{
     color: @collab-chat-input-color;
-    .font-smoothing(@collab-chat-input-font-smoothing);
+    font-smoothing: @collab-chat-input-font-smoothing;
 }
 .chatContainer .ace-tm .ace_marker-layer .ace_selection {
     background: @collab-chat-input-selection-color;

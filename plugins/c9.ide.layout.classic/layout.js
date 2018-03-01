@@ -83,8 +83,6 @@ define(function(require, exports, module) {
             // Load the skin
             ui.insertSkin({
                 "data": require("text!./skins.xml"),
-                "media-path": options.staticPrefix + "/images/",
-                "icon-path": options.staticPrefix + "/icons/"
             }, plugin);
             
             // Create UI elements
@@ -245,7 +243,7 @@ define(function(require, exports, module) {
             var isFlatTheme = theme.indexOf("flat") > -1;
             var img = options.staticPrefix + "/images/" + (
                 isFlatTheme
-                    ? "gecko_mask_flat_light.png"
+                    ? "gecko_mask_flat_light@" + (highResolution ? 2 : 1) + "x.png"
                     : "gecko_mask.png");
             var width = isFlatTheme ? 76 : 46;
             var height = isFlatTheme ? 26 : 24;

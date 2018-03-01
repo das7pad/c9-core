@@ -430,7 +430,7 @@ define(function(require, exports, module) {
             callback(null, emit("getBreakpoints"));
         }
 
-        function setVariable(variable, parents, value, frame, callback) {
+        function setVariable(variable, value, frame, callback) {
             var scope = findScope(variable);
 
             session.setPropertyValue(variable.ref, frame.index, scope.index, value, function(err) {
@@ -452,11 +452,17 @@ define(function(require, exports, module) {
         }
 
         function getProxySource(process) {
-            return PROXY
-                .replace(/\/\/.*/g, "")
-                .replace(/[\n\r]/g, "")
-                .replace(/\{HOST\}/, process.runner[0].debughost || "")
-                .replace(/\{PORT\}/, process.runner[0].debugport);
+            var socketPath = c9.home + "/.c9/xdebug.sock";
+            if (c9.platform == "win32")
+                socketPath = "\\\\.\\pipe\\" + socketPath.replace(/\//g, "\\");
+            return {
+                source: PROXY
+                    .replace(/^\s*\/\/.*/gm, "")
+                    .replace(/[\n\r]/g, "")
+                    .replace(/\{HOST\}/, process.runner.debughost || "")
+                    .replace(/\{PORT\}/, process.runner.debugport),
+                port: socketPath
+            };
         }
 
         function setBreakpoints(breakpoints, callback) {
@@ -779,7 +785,6 @@ define(function(require, exports, module) {
             /**
              * Sets the value of a variable.
              * @param {debugger.Variable}   variable       The variable to set the value of.
-             * @param {debugger.Variable[]} parents        The parent variables (i.e. the objects of which the variable is the property).
              * @param {Mixed}               value          The new value of the variable.
              * @param {debugger.Frame}      frame          The frame to which the variable belongs.
              * @param {Function}            callback

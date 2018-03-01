@@ -110,15 +110,13 @@ define(function(require, exports, module) {
             ui.insertSkin({
                 name: "help-skin",
                 data: require("text!./skin.xml"),
-                "media-path": options.staticPrefix + "/images/",
-                "icon-path": options.staticPrefix + "/icons/"
             }, plugin);
             
             // Import CSS
-            ui.insertCss(css, options.staticPrefix, plugin);
+            ui.insertCss(css, null, plugin);
             
             // Create UI elements
-            ui.insertMarkup(null, markup, plugin);
+            ui.insertMarkup(null, markup.replace(/{YEAR}/g, new Date().getFullYear()), plugin);
             
             aboutDialog = plugin.getElement("aboutDialog");
         
