@@ -5541,9 +5541,12 @@ apf.AmlNode = function(){
                     nextNode = nextNode.nextSibling;
                 }
                 
-                amlNode.$pHtmlNode.insertBefore(amlNode.$altExt || amlNode.$ext,
-                    nextNode && (nextNode.$altExt || nextNode.$ext) || null);
+                var htmlNode = amlNode.$altExt || amlNode.$ext;
+                var nextHtmlNode = nextNode && (nextNode.$altExt || nextNode.$ext) || null;
+                if (htmlNode.parentNode != amlNode.$pHtmlNode || amlNode.nextSibling != nextHtmlNode) {
                     
+                    amlNode.$pHtmlNode.insertBefore(htmlNode, nextHtmlNode);
+                }
             }
             
             //Signal node and all it's ancestors
@@ -8062,14 +8065,9 @@ apf.GuiElement.propHandlers = {
         else { //if (apf.isTrue(value)) default
             if (this.$ext) {
                 this.$ext.style.display = ""; //Some form of inheritance detection
-                if (!this.$ext.offsetHeight)
+                if (getComputedStyle(this.$ext).display == "none")
                     this.$ext.style.display = this.$display || "block";
             }
-            
-            
-            // if (apf.layout && this.$int) //apf.hasSingleRszEvent)
-            //     apf.layout.forceResize(this.$int);//this.$int
-            
             
             this.visible = true;
         }
@@ -10966,16 +10964,9 @@ apf.window = function(){
         (apf.window.activeElement = amlNode).focus(true, e);
 
         this.$settingFocus = null;
-
-        apf.dispatchEvent("movefocus", {
-            toElement: amlNode
-        });
-
         
 
-        
-
-        
+        apf.dispatchEvent("movefocus", e);
     };
 
     this.$blur = function(amlNode) {

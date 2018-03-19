@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "PreferencePanel", "ace", "ui", "configure", "settings", 
-        "preferences.experimental"
+        "preferences.experimental", "layout"
     ];
     main.provides = ["preferences.themes"];
     return main;
@@ -10,6 +10,7 @@ define(function(require, exports, module) {
         var PreferencePanel = imports.PreferencePanel;
         var ui = imports.ui;
         var ace = imports.ace;
+        var layout = imports.layout;
         var configure = imports.configure;
         var settings = imports.settings;
         var experimental = imports["preferences.experimental"];
@@ -29,24 +30,53 @@ define(function(require, exports, module) {
         // var emit = plugin.getEmitter();
         
         var intro;
+        var themeContainers = {};
+        var themes = [];
         
         var loaded = false;
         function load() {
             if (loaded) return false;
             loaded = true;
             
-            function update() {
-                if (!drawn) return;
-                
-                var list = getThemes();
-                plugin.form.update([{
-                    id: "syntax",
-                    items: list
-                }]);
-            }
-            
-            ace.on("addTheme", update);
-            ace.on("removeTheme", update);
+            layout.addTheme({
+                group: "classic",
+                color: "#252525;",
+                name: "dark",
+                caption: "Classic Dark",
+            });
+            layout.addTheme({
+                group: "classic",
+                color: "#3f3f3f;",
+                name: "dark-gray",
+                caption: "Classic Dark Gray",
+            });
+            layout.addTheme({
+                group: "classic",
+                color: "#aaa;", 
+                name: "light-gray",
+                hidden: !options.lightClassic,
+                caption: "Classic Light Gray",
+            });
+            layout.addTheme({
+                group: "classic",
+                color: "#dcdbdb;", 
+                name: "light",
+                hidden: !options.lightClassic,
+                caption: "Classic Light",
+            });
+            layout.addTheme({
+                group: "flat",
+                color: "#252525;", 
+                name: "flat-dark",
+                hidden: !FLATDARK,
+                caption: "Flat Dark",
+            });
+            layout.addTheme({
+                group: "flat",
+                color: "#dcdbdb;", 
+                name: "flat-light",
+                caption: "Flat Light",
+            });
         }
         
         var drawn;
@@ -55,24 +85,7 @@ define(function(require, exports, module) {
             drawn = true;
             
             var list = getThemes();
-            
-            var rb1, rb2, rb3, rb4, rb5, rb6;
-            
-            var flatThemes = [];
-            rb6 = new ui.radiobutton({ 
-                group: "theme-color", 
-                class: "themepicker", 
-                style: "background:#252525;", 
-                value: "flat-dark"
-            });
-            rb5 = new ui.radiobutton({ 
-                group: "theme-color", 
-                class: "themepicker", 
-                style: "background:#dcdbdb;", 
-                value: "flat-light"
-            });
-            if (FLATDARK) flatThemes.push(rb6);
-            flatThemes.push(rb5);
+
             
             plugin.form.add([
                 {
@@ -99,9 +112,7 @@ define(function(require, exports, module) {
                                 caption: "Flat Theme:", 
                                 style: "padding-top:5px" 
                             }),
-                            new ui.bar({
-                                childNodes: flatThemes
-                            })
+                            themeContainers.flat = new ui.bar({})
                         ]
                     })
                 },
@@ -119,34 +130,7 @@ define(function(require, exports, module) {
                                 caption: "Classic Theme:", 
                                 style: "padding-top:5px" 
                             }),
-                            new ui.bar({
-                                childNodes: [
-                                    rb1 = new ui.radiobutton({ 
-                                        group: "theme-color", 
-                                        class: "themepicker", 
-                                        style: "background:#252525;", 
-                                        value: "dark" 
-                                    }),
-                                    rb2 = new ui.radiobutton({ 
-                                        group: "theme-color", 
-                                        class: "themepicker", 
-                                        style: "background:#3f3f3f;", 
-                                        value: "dark-gray" 
-                                    }),
-                                    // rb3 = new ui.radiobutton({ 
-                                    //     group: "theme-color", 
-                                    //     class: "themepicker", 
-                                    //     style: "background:#aaa;", 
-                                    //     value: "light-gray" 
-                                    // }),
-                                    // rb4 = new ui.radiobutton({ 
-                                    //     group: "theme-color", 
-                                    //     class: "themepicker", 
-                                    //     style: "background:#dcdbdb;", 
-                                    //     value: "light"
-                                    // })
-                                ]
-                            })
+                            themeContainers.classic = new ui.bar({})
                         ]
                     })
                 },
@@ -164,21 +148,19 @@ define(function(require, exports, module) {
                 },
             ], plugin);
             
-            var change = function(e) {
-                settings.set("user/general/@skin", e.value);
-            };
-            var setTheme = function(e) {
-                [rb1, rb2, rb5, rb6].some(function(rb) {
-                    if (rb.value == e.value) {
-                        rb.select();
-                        return true;
-                    }
-                });
-            };
-            settings.on("user/general/@skin", setTheme);
-            setTheme({ value: settings.get("user/general/@skin") });
             
-            rb1.$group.on("afterchange", change);
+            function update() {
+                if (!drawn) return;
+                
+                var list = getThemes();
+                plugin.form.update([{
+                    id: "syntax",
+                    items: list
+                }]);
+            }
+            
+            ace.on("addTheme", update, plugin);
+            ace.on("removeTheme", update, plugin);
             
             ui.buildDom([
                 ["h1", null, "Themes"],
@@ -188,10 +170,35 @@ define(function(require, exports, module) {
                 ],
                 ["p", { class: "hint" }, "Set all the colors free!"]
             ], intro.$int);
+            
+            
+            themeContainers.group = new apf.group();
+            
+            layout.on("themeAdded", drawThemeSwatches);
+            drawThemeSwatches();
+            
+            var change = function(e) {
+                settings.set("user/general/@skin", e.value);
+            };
+            var setTheme = function(e) {
+                [].concat(
+                    themeContainers.flat.childNodes,
+                    themeContainers.classic.childNodes
+                ).some(function(rb) {
+                    if (rb.value == e.value) {
+                        rb.select();
+                        return true;
+                    }
+                });
+            };
+            settings.on("user/general/@skin", setTheme, plugin);
+            setTheme({ value: settings.get("user/general/@skin") });
+            
+            themeContainers.group.on("afterchange", change);
         }
         
         /***** Methods *****/
-        
+
         function getThemes() {
             var list = [];
             var themes = ace.themes;
@@ -207,6 +214,31 @@ define(function(require, exports, module) {
             return list;
         }
         
+        
+        function drawThemeSwatches() {
+            var themes = layout.listThemes();
+            themeContainers.classic.childNodes.forEach(function(n) {
+                n.remove();
+            });
+            themeContainers.flat.childNodes.forEach(function(n) {
+                n.remove();
+            });
+            
+            themes.forEach(function(theme) {
+                if (theme.hidden) return;
+                var container = theme.group == "flat" ? themeContainers.flat : themeContainers.classic;
+                container.appendChild(
+                    new ui.radiobutton({
+                        group: themeContainers.group, 
+                        class: "themepicker", 
+                        style: "background:" + theme.color, 
+                        value: theme.name,
+                        tooltip: theme.name,
+                    })
+                );
+            });
+        }
+        
         /***** Lifecycle *****/
         
         plugin.on("load", function() {
@@ -218,6 +250,8 @@ define(function(require, exports, module) {
         plugin.on("unload", function() {
             loaded = false;
             drawn = false;
+            intro = null;
+            themeContainers = {};
         });
         
         /***** Register and define API *****/

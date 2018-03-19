@@ -126,14 +126,18 @@ define(function(require, exports, module) {
             emit("draw");
         }
         
-        var allowedThemes = { 
-            "dark": 1, 
-            "dark-gray": 1, 
-            "light-gray": 1, 
-            "light": 1,
-            "flat-light": 1, 
-            "flat-dark": 1
-        };
+        var allowedThemes = {};
+        
+        function addTheme(data) {
+            allowedThemes[data.name] = data;
+            emit("themeAdded", data);
+        }
+        
+        function listThemes() {
+           return Object.keys(allowedThemes).map(function(key) {
+               return allowedThemes[key];
+           });
+        }
         
         function setImageResolution(value) {
             if (window.matchMedia) {
@@ -146,8 +150,6 @@ define(function(require, exports, module) {
         
         function updateTheme(noquestion, type) {
             var sTheme = settings.get("user/general/@skin");
-            if (!allowedThemes[sTheme])
-                sTheme = "dark";
             
             if (noquestion === undefined)
                 noquestion = !theme;
@@ -159,20 +161,25 @@ define(function(require, exports, module) {
                 theme = sTheme;
                 
                 if (ui.packedThemes) {
-                    preload.getTheme(theme, function(err, theme) {
-                        if (err)
+                    preload.getTheme(theme, function(err, themeCss) {
+                        if (sTheme !== theme)
                             return;
+                        if (err) {
+                            if (!allowedThemes[sTheme])
+                                settings.set("user/general/@skin", "dark");
+                            return;
+                        }
                         // Remove Current Theme
                         if (removeTheme)
                             removeTheme();
                         var url = options.staticPrefix.replace(/c9.ide.layout.classic\/?$/, "");
-                        theme = theme.replace(/(url\(["']?)\/static\/plugins\//g, function(_, x) {
+                        themeCss = themeCss.replace(/(url\(["']?)\/static\/plugins\//g, function(_, x) {
                             return x + url;
                         });
-                        theme = setImageResolution(theme);
+                        themeCss = setImageResolution(themeCss);
                         
                         // Load the theme css
-                        ui.insertCss(theme, false, {
+                        ui.insertCss(themeCss, false, {
                             addOther: function(remove) { removeTheme = remove; }
                         });
                         changeTheme();
@@ -596,7 +603,8 @@ define(function(require, exports, module) {
             get hasTheme() {
                 return !ui.packedThemes || !!removeTheme
             },
-
+            addTheme: addTheme,
+            listThemes: listThemes,
             /**
              * Returns an AMLElement that can server as a parent.
              * @param {Plugin} plugin  The plugin for which to find the parent.

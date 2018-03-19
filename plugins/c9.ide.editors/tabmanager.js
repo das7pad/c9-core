@@ -196,9 +196,9 @@ define(function(require, module, exports) {
             settings.on("read", function(e) {
                 // Defaults
                 settings.setDefaults("user/tabs", [
-                    ["show", "true"], 
-                    ["title", "false"],
-                    ["asterisk", "false"]
+                    ["show", true], 
+                    ["title", false],
+                    ["asterisk", false]
                 ]);
                 settings.setDefaults("state/tabs", []);
                 
@@ -248,7 +248,7 @@ define(function(require, module, exports) {
             
             settings.on("user/tabs/@asterisk", function(value) {
                 containers.forEach(function(container) {
-                    if (value)
+                    if (ui.isTrue(value))
                         ui.setStyleClass(container, "asterisk");
                     else
                         ui.setStyleClass(container, "", ["asterisk"]);
@@ -630,7 +630,7 @@ define(function(require, module, exports) {
             if (!loaded || tab.document.meta.preview) 
                 return;
             
-            var lastTab = focussedTab;
+            var lastTab = e.lastTab || focussedTab;
             
             if (!focussedTab || focussedTab.pane == tab.pane && focussedTab != tab)
                 focusTab(tab, true, true);
