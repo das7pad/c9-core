@@ -317,30 +317,18 @@ function endTime(t, message, indent) {
                 throw e;
             }
         }
-        var handler;
-        try {
-            handler = require(path);
-            if (!handler)
-                throw new Error("Unable to load required module: " + path);
-        } catch (e) {
-            if (isInWebWorker) {
-                console.error("Could not load language handler " + path + ": " + e);
-                _self.sender.emit("registered", { path: path, err: e.message });
-                callback && callback(e);
-                throw e;
+        require([path], function(handler) {
+            if (!handler) {
+                _self.sender.emit("registered", { path: path, err: "Could not load" });
+                callback && callback("Could not load");
+                throw new Error("Could not load language handler " + path);
             }
-            // In ?noworker=1 debugging mode, synchronous require doesn't work
-            require([path], function(handler) {
-                if (!handler) {
-                    _self.sender.emit("registered", { path: path, err: "Could not load" });
-                    callback && callback("Could not load");
-                    throw new Error("Could not load language handler " + path);
-                }
-                onRegistered(handler);
-            });
-            return;
-        }
-        onRegistered(handler);
+            onRegistered(handler);
+        }, function(e) {
+            console.error("Could not load language handler " + path + ": " + e);
+            _self.sender.emit("registered", { path: path, err: e.message });
+            callback && callback(e);
+        });
     };
     
     this.$createEmitter = function(path) {
@@ -366,11 +354,11 @@ function endTime(t, message, indent) {
     };
     
     this.unregister = function(modulePath, callback) {
-        if (window.require)
-            window.require.modules[modulePath] = null;
         this.handlers = this.handlers.filter(function(h) {
             return h.$source !== modulePath;
         });
+        if (window.require)
+            window.require.undef(modulePath, true);
         callback && callback();
     };
 
