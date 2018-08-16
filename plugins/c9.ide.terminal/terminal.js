@@ -668,13 +668,12 @@ define(function(require, exports, module) {
                     var screenBottom = config.height - coverHeight + config.offset + 2;
                     var screenRight = (cols - this.width) * config.characterWidth;
                     
-                    html.push("<div style='height:", coverHeight, "px;", "left:0; right: ", screenRight, "px; top:", screenBottom, "px;' ", 
-                            "class='c9terminalcontainer cover bottom'></div>",
-                        "<div style='width:", screenRight, "px; height: ", screenBottom, "px; top:0; right:0;' ",
-                            "class='c9terminalcontainer cover right'></div>",
-                        "<div style='width:", screenRight, "px; bottom:0; top:", screenBottom, "px; right:0;' ",
-                            "class='c9terminalcontainer cover'></div>"
-                    );
+                    markerLayer.elt("c9terminalcontainer cover bottom",
+                        "height:" + coverHeight + "px;" + "left:0; right: " + screenRight + "px; top:" + screenBottom + "px;");
+                    markerLayer.elt("c9terminalcontainer cover right",
+                        "width:" + screenRight + "px; height: " + screenBottom + "px; top:0; right:0;");
+                    markerLayer.elt("c9terminalcontainer cover",
+                        "width:" + screenRight + "px; bottom:0; top:" + screenBottom + "px; right:0;");
                 };
                 aceSession.addDynamicMarker(marker, true);
                 aceSession.term.tmuxDotCover = marker;
@@ -1167,9 +1166,10 @@ define(function(require, exports, module) {
             plugin.on("paste", function(e) {
                 if (e.native) return; // Ace handles this herself
                 
-                var data = e.clipboardData.getData("text/plain");
-                if (data !== false)
-                    aceterm.onPaste(data);
+                e.clipboardData.getData("text/plain", function(err, data) {
+                    if (!err && data && data !== false)
+                        aceterm.onPaste(data);
+                });
             });
             
             plugin.on("focus", function(e) {
